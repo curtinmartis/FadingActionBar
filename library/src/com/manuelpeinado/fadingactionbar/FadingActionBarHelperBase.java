@@ -15,9 +15,6 @@
  */
 package com.manuelpeinado.fadingactionbar;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
@@ -38,6 +35,9 @@ import android.widget.ListView;
 import com.manuelpeinado.fadingactionbar.view.ObservableScrollView;
 import com.manuelpeinado.fadingactionbar.view.ObservableWebViewWithHeader;
 import com.manuelpeinado.fadingactionbar.view.OnScrollChangedCallback;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 @SuppressWarnings("unchecked")
 public abstract class FadingActionBarHelperBase {
@@ -194,11 +194,11 @@ public abstract class FadingActionBarHelperBase {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         } catch (ClassCastException e) {
-           e.printStackTrace();
+            e.printStackTrace();
         }
         return null;
     }
-    
+
     private Drawable.Callback mDrawableCallback = new Drawable.Callback() {
         @Override
         public void invalidateDrawable(Drawable who) {
@@ -243,7 +243,7 @@ public abstract class FadingActionBarHelperBase {
 
         ViewGroup contentContainer = (ViewGroup) scrollViewContainer.findViewById(R.id.fab__container);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-        		LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         mContentView.setLayoutParams(layoutParams);
         contentContainer.addView(mContentView);
         mHeaderContainer = (FrameLayout) scrollViewContainer.findViewById(R.id.fab__header_container);
@@ -299,7 +299,17 @@ public abstract class FadingActionBarHelperBase {
         public void onScrollStateChanged(AbsListView view, int scrollState) {
         }
     };
+
     private int mLastScrollPosition;
+    private OnAlphaChangeListener mOnAlphaChangeListener;
+
+    public static interface OnAlphaChangeListener {
+        void onAlphaChanged(float alpha);
+    }
+
+    public void setOnAlphaChangeListener(OnAlphaChangeListener l) {
+        mOnAlphaChangeListener = l;
+    }
 
     private void onNewScroll(int scrollPosition) {
         if (isActionBarNull()) {
@@ -315,6 +325,9 @@ public abstract class FadingActionBarHelperBase {
         float ratio = (float) Math.min(Math.max(scrollPosition, 0), headerHeight) / headerHeight;
         int newAlpha = (int) (ratio * 255);
         mActionBarBackgroundDrawable.setAlpha(newAlpha);
+        if (mOnAlphaChangeListener != null) {
+            mOnAlphaChangeListener.onAlphaChanged(ratio);
+        }
 
         addParallaxEffect(scrollPosition);
     }
