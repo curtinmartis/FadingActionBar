@@ -59,6 +59,7 @@ public abstract class FadingActionBarHelperBase {
     private boolean mFirstGlobalLayoutPerformed;
     private FrameLayout mMarginView;
     private View mListViewBackgroundView;
+    private int mScrollViewResId = -1;
 
     public final <T extends FadingActionBarHelperBase> T actionBarBackground(int drawableResId) {
         mActionBarBackgroundResId = drawableResId;
@@ -110,6 +111,11 @@ public abstract class FadingActionBarHelperBase {
         return (T)this;
     }
 
+    public final <T extends FadingActionBarHelperBase> T  observableScrollView(int layoutResId) {
+        mScrollViewResId = layoutResId;
+        return (T)this;
+    }
+
     public final View createView(Context context) {
         return createView(LayoutInflater.from(context));
     }
@@ -130,9 +136,12 @@ public abstract class FadingActionBarHelperBase {
         // See if we are in a ListView, WebView or ScrollView scenario
 
         ListView listView = (ListView) mContentView.findViewById(android.R.id.list);
+        ObservableScrollView scrollView = (ObservableScrollView) mContentView.findViewById(mScrollViewResId);
         View root;
         if (listView != null) {
             root = createListView(listView);
+        } else if (scrollView != null) {
+            root = createScrollView(scrollView);
         } else if (mContentView instanceof ObservableWebViewWithHeader){
             root = createWebView();
         } else {
@@ -238,8 +247,8 @@ public abstract class FadingActionBarHelperBase {
     private View createScrollView() {
         ViewGroup scrollViewContainer = (ViewGroup) mInflater.inflate(R.layout.fab__scrollview_container, null);
 
-        ObservableScrollView scrollView = (ObservableScrollView) scrollViewContainer.findViewById(R.id.fab__scroll_view);
-        scrollView.setOnScrollChangedCallback(mOnScrollChangedListener);
+        ObservableScrollView obsScrollView = (ObservableScrollView) scrollViewContainer.findViewById(R.id.fab__scroll_view);
+        obsScrollView.setOnScrollChangedCallback(mOnScrollChangedListener);
 
         ViewGroup contentContainer = (ViewGroup) scrollViewContainer.findViewById(R.id.fab__container);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
@@ -250,6 +259,24 @@ public abstract class FadingActionBarHelperBase {
         initializeGradient(mHeaderContainer);
         mHeaderContainer.addView(mHeaderView, 0);
         mMarginView = (FrameLayout) contentContainer.findViewById(R.id.fab__content_top_margin);
+
+        return scrollViewContainer;
+    }
+
+    private View createScrollView(ObservableScrollView scrollView) {
+        ViewGroup scrollViewContainer = (ViewGroup) mInflater.inflate(R.layout.fab__generic_container, null);
+        scrollViewContainer.addView(mContentView);
+
+        scrollView.setOnScrollChangedCallback(mOnScrollChangedListener);
+
+        mHeaderContainer = (FrameLayout) scrollViewContainer.findViewById(R.id.fab__header_container);
+        initializeGradient(mHeaderContainer);
+        mHeaderContainer.addView(mHeaderView, 0);
+
+        ViewGroup contentContainer = (ViewGroup) scrollView.getChildAt(0);
+        mMarginView = new FrameLayout(scrollView.getContext());
+        mMarginView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        contentContainer.addView(mMarginView, 0);
 
         return scrollViewContainer;
     }
